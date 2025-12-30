@@ -111,18 +111,17 @@
 		</dependency>
 
 		<!-- postgresql -->
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>${postgresql.version}</version>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>org.postgresql</groupId>-->
+<!--			<artifactId>postgresql</artifactId>-->
+<!--			<version>${postgresql.version}</version>-->
+<!--		</dependency>-->
 
-        <!-- opengauss -->
-<!--        <dependency>-->
-<!--            <groupId>org.opengauss</groupId>-->
-<!--            <artifactId>opengauss-jdbc</artifactId>-->
-<!--            <version>5.0.0</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.wshoto</groupId>
+            <artifactId>gsjdbc4-jdbc</artifactId>
+            <version>5.0.0</version>
+        </dependency>
 
 		<!-- xxl-job-core -->
 		<dependency>
