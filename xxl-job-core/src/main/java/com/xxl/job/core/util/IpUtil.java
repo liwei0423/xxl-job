@@ -8,7 +8,10 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -113,9 +116,14 @@ public class IpUtil {
             if (null == interfaces) {
                 return localAddress;
             }
+            // sort by interface name to ensure stable selection order (e.g. eth0 before eth1)
+            List<NetworkInterface> interfaceList = new ArrayList<>();
             while (interfaces.hasMoreElements()) {
+                interfaceList.add(interfaces.nextElement());
+            }
+            Collections.sort(interfaceList, (a, b) -> a.getName().compareTo(b.getName()));
+            for (NetworkInterface network : interfaceList) {
                 try {
-                    NetworkInterface network = interfaces.nextElement();
                     if (network.isLoopback() || network.isVirtual() || !network.isUp()) {
                         continue;
                     }
