@@ -38,6 +38,7 @@ public class XxlJobExecutor  {
     private int port;
     private String logPath;
     private int logRetentionDays;
+    private String preferredNetworks;
 
     public void setAdminAddresses(String adminAddresses) {
         this.adminAddresses = adminAddresses;
@@ -66,6 +67,9 @@ public class XxlJobExecutor  {
     public void setLogRetentionDays(int logRetentionDays) {
         this.logRetentionDays = logRetentionDays;
     }
+    public void setPreferredNetworks(String preferredNetworks) {
+        this.preferredNetworks = preferredNetworks;
+    }
 
 
     // ---------------------- start + stop ----------------------
@@ -85,7 +89,7 @@ public class XxlJobExecutor  {
         TriggerCallbackThread.getInstance().start();
 
         // init executor-server
-        initEmbedServer(address, ip, port, appname, accessToken);
+        initEmbedServer(address, ip, port, appname, accessToken, preferredNetworks);
     }
 
     public void destroy(){
@@ -144,11 +148,19 @@ public class XxlJobExecutor  {
     // ---------------------- executor-server (rpc provider) ----------------------
     private EmbedServer embedServer = null;
 
-    private void initEmbedServer(String address, String ip, int port, String appname, String accessToken) throws Exception {
+    private void initEmbedServer(String address, String ip, int port, String appname, String accessToken, String preferredNetworks) throws Exception {
 
         // fill ip port
         port = port>0?port: NetUtil.findAvailablePort(9999);
-        ip = (ip!=null&&ip.trim().length()>0)?ip: IpUtil.getIp();
+        if (ip!=null && ip.trim().length()>0) {
+            // explicit ip configured, use it directly
+        } else if (preferredNetworks!=null && preferredNetworks.trim().length()>0) {
+            // preferred networks configured, find matching ip
+            java.net.InetAddress preferredAddr = IpUtil.getIpByPreferredNetworks(preferredNetworks);
+            ip = (preferredAddr != null) ? preferredAddr.getHostAddress() : IpUtil.getIp();
+        } else {
+            ip = IpUtil.getIp();
+        }
 
         // generate address
         if (address==null || address.trim().length()==0) {

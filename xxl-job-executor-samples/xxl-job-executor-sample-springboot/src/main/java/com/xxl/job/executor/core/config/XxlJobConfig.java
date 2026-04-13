@@ -43,6 +43,9 @@ public class XxlJobConfig {
     @Value("${xxl.job.executor.logretentiondays}")
     private int logRetentionDays;
 
+    @Value("${xxl.job.executor.preferredNetworks:}")
+    private String preferredNetworks;
+
 
     @Bean
     public XxlJobSpringExecutor xxlJobExecutor() {
@@ -57,6 +60,7 @@ public class XxlJobConfig {
         xxlJobSpringExecutor.setTimeout(timeout);
         xxlJobSpringExecutor.setLogPath(logPath);
         xxlJobSpringExecutor.setLogRetentionDays(logRetentionDays);
+        xxlJobSpringExecutor.setPreferredNetworks(preferredNetworks);
 
         return xxlJobSpringExecutor;
     }

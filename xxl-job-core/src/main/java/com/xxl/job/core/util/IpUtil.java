@@ -9,7 +9,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -116,14 +115,9 @@ public class IpUtil {
             if (null == interfaces) {
                 return localAddress;
             }
-            // sort by interface name to ensure stable selection order (e.g. eth0 before eth1)
-            List<NetworkInterface> interfaceList = new ArrayList<>();
             while (interfaces.hasMoreElements()) {
-                interfaceList.add(interfaces.nextElement());
-            }
-            Collections.sort(interfaceList, (a, b) -> a.getName().compareTo(b.getName()));
-            for (NetworkInterface network : interfaceList) {
                 try {
+                    NetworkInterface network = interfaces.nextElement();
                     if (network.isLoopback() || network.isVirtual() || !network.isUp()) {
                         continue;
                     }
@@ -154,6 +148,68 @@ public class IpUtil {
         return localAddress;
     }
 
+
+    // ---------------------- find ip by preferred networks ----------------------
+
+    /**
+     * Find first valid IP that matches one of the preferred network patterns (e.g. "10.190.119.*,10.190.121.*").
+     * Patterns are checked in order; the first network card IP that matches wins.
+     * Returns null if no match is found so the caller can fall back to normal logic.
+     *
+     * @param preferredNetworks comma-separated glob patterns, '*' is wildcard
+     * @return matched InetAddress, or null
+     */
+    public static InetAddress getIpByPreferredNetworks(String preferredNetworks) {
+        if (preferredNetworks == null || preferredNetworks.trim().length() == 0) {
+            return null;
+        }
+        String[] patterns = preferredNetworks.split(",");
+
+        // collect all valid local IPv4 addresses across all interfaces
+        List<InetAddress> candidates = new ArrayList<>();
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            if (interfaces != null) {
+                while (interfaces.hasMoreElements()) {
+                    NetworkInterface network = interfaces.nextElement();
+                    try {
+                        if (network.isLoopback() || network.isVirtual() || !network.isUp()) {
+                            continue;
+                        }
+                        Enumeration<InetAddress> addresses = network.getInetAddresses();
+                        while (addresses.hasMoreElements()) {
+                            InetAddress addr = toValidAddress(addresses.nextElement());
+                            if (addr != null) {
+                                candidates.add(addr);
+                            }
+                        }
+                    } catch (Throwable e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            logger.error(e.getMessage(), e);
+        }
+
+        // match candidates against patterns in priority order
+        for (String pattern : patterns) {
+            String trimmed = pattern.trim();
+            if (trimmed.length() == 0) {
+                continue;
+            }
+            // convert glob pattern to regex: escape dots, replace '*' with '.*'
+            String regex = trimmed.replace(".", "\\.").replace("*", ".*");
+            Pattern p = Pattern.compile("^" + regex + "$");
+            for (InetAddress addr : candidates) {
+                if (p.matcher(addr.getHostAddress()).matches()) {
+                    logger.info(">>>>>>>>>>> xxl-job preferredNetworks matched: pattern={}, ip={}", trimmed, addr.getHostAddress());
+                    return addr;
+                }
+            }
+        }
+        return null;
+    }
 
     // ---------------------- tool ----------------------
 
