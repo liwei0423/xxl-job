@@ -42,6 +42,11 @@ public class JobCodeController {
 		if (GlueTypeEnum.BEAN == GlueTypeEnum.match(jobInfo.getGlueType())) {
 			throw new RuntimeException(I18nUtil.getString("jobinfo_glue_gluetype_unvalid"));
 		}
+		// security: block all GLUE-type code editors (script and Java); only BEAN is allowed
+		GlueTypeEnum glueTypeEnum = GlueTypeEnum.match(jobInfo.getGlueType());
+		if (glueTypeEnum != null && (glueTypeEnum.isScript() || glueTypeEnum == GlueTypeEnum.GLUE_GROOVY)) {
+			throw new RuntimeException(I18nUtil.getString("jobinfo_glue_gluetype_unvalid"));
+		}
 
 		// valid permission
 		PermissionInterceptor.validJobGroupPermission(request, jobInfo.getJobGroup());
@@ -67,6 +72,11 @@ public class JobCodeController {
 		XxlJobInfo existsJobInfo = xxlJobInfoDao.loadById(id);
 		if (existsJobInfo == null) {
 			return new ReturnT<String>(500, I18nUtil.getString("jobinfo_glue_jobid_unvalid"));
+		}
+		// security: block saving GLUE source code for all GLUE types (script and Java)
+		GlueTypeEnum glueTypeEnum = GlueTypeEnum.match(existsJobInfo.getGlueType());
+		if (glueTypeEnum == null || glueTypeEnum.isScript() || glueTypeEnum == GlueTypeEnum.GLUE_GROOVY) {
+			return new ReturnT<String>(500, I18nUtil.getString("jobinfo_glue_gluetype_unvalid"));
 		}
 
 		// valid permission

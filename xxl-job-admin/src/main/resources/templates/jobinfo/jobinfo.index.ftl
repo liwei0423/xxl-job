@@ -173,7 +173,11 @@
                         <div class="col-sm-4">
                             <select class="form-control glueType" name="glueType" >
                                 <#list GlueTypeEnum as item>
-                                    <option value="${item}" >${item.desc}</option>
+                                    <#if item.name() == "BEAN">
+                                        <option value="${item}" >${item.desc}</option>
+                                    <#else>
+                                        <option value="${item}" disabled style="display:none">${item.desc}</option>
+                                    </#if>
                                 </#list>
                             </select>
                         </div>
